@@ -18,6 +18,12 @@ public:
 		DrawCircle(m_x, m_y, m_radius, WHITE);
 		return *this;
 	}
+
+	Projectile move()
+	{
+		m_y -= m_speed * GetFrameTime();
+		return *this;
+	}
 };
 
 class Player
@@ -67,7 +73,7 @@ public:
 	Player shoot()
 	{
 		if (IsKeyDown(KEY_SPACE))
-			projectile.draw();
+			projectile.draw().move();
 		
 		return *this;
 	}
