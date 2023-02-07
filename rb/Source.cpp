@@ -1,11 +1,32 @@
 #include "raylib.h"
 
+class Projectile
+{
+private:
+	float m_x, m_y, m_radius;
+	float m_speed;
+
+public:
+	Projectile(float x, float y, float radius, float speed)
+		:m_x{ x }, m_y{ y }, m_radius{ radius }, m_speed{ speed }
+	{
+
+	}
+
+	Projectile draw()
+	{
+		DrawCircle(m_x, m_y, m_radius, WHITE);
+		return *this;
+	}
+};
+
 class Player
 {
 private:
 	float m_x, m_y;
 	float m_speed;
 	float m_width, m_height;
+	Projectile projectile{ m_x, m_y - m_height, 5, 150 };
 
 public:
 	Player(float x, float y, float speed, float width, float height)
@@ -45,19 +66,14 @@ public:
 
 	Player shoot()
 	{
-		if(IsKeyDown(KEY_SPACE))
-			DrawCircle(m_x, m_y - m_height - 10, 5, WHITE);
+		if (IsKeyDown(KEY_SPACE))
+			projectile.draw();
 		
 		return *this;
 	}
 };
 
 
-class Projectile
-{
-private:
-
-};
 
 
 int main()
