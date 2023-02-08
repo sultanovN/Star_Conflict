@@ -1,7 +1,26 @@
 #include "raylib.h"
 #include <vector>
 
+typedef struct Timer {
+	double startTime;   // Start time (seconds)
+	double lifeTime;    // Lifetime (seconds)
+} Timer;
 
+void StartTimer(Timer* timer, double lifetime)
+{
+	timer->startTime = GetTime();
+	timer->lifeTime = lifetime;
+}
+
+bool TimerDone(Timer timer)
+{
+	return GetTime() - timer.startTime >= timer.lifeTime;
+}
+
+double GetElapsed(Timer timer)
+{
+	return GetTime() - timer.startTime;
+}
 
 class Player;
 
@@ -78,7 +97,7 @@ public:
 		return *this;
 	}
 
-	Player shoot()
+	Player shoot(float delay, Timer &timer)
 	{
 		for (size_t i = 0; i < projectile.size(); ++i)
 		{
@@ -88,12 +107,13 @@ public:
 				projectile.erase(projectile.begin() + i);
 		}
 		
-		if (IsKeyDown(KEY_SPACE))
+		if (IsKeyDown(KEY_SPACE) && TimerDone(timer))
 		{
 			projectile.push_back({ m_x, m_y - m_height, 5, 150 });
-
+			StartTimer(&timer, delay);
+			
 		}
-		
+		GetElapsed(timer);
 		return *this;
 	}
 
@@ -114,10 +134,12 @@ int main()
 
 	Player player{ GetScreenWidth() / 2.0f, GetScreenHeight() * 1.0f - 50, 200, 80, 80 };
 
+	float shooting_delay = 1.0f;
+	Timer shoot_timer{ 0 };
 	while (!WindowShouldClose())
 	{
 		player.move();
-		player.shoot();
+		player.shoot(shooting_delay, shoot_timer);
 		BeginDrawing();
 		ClearBackground(BLACK);
 		player.draw();
