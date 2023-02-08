@@ -1,4 +1,9 @@
 #include "raylib.h"
+#include <vector>
+
+
+
+class Player;
 
 class Projectile
 {
@@ -12,6 +17,8 @@ public:
 	{
 
 	}
+
+	float getY()const { return m_y; }
 
 	Projectile draw()
 	{
@@ -32,7 +39,7 @@ private:
 	float m_x, m_y;
 	float m_speed;
 	float m_width, m_height;
-	Projectile projectile{ m_x, m_y - m_height, 5, 150 };
+	std::vector<Projectile> projectile;
 
 public:
 	Player(float x, float y, float speed, float width, float height)
@@ -40,6 +47,7 @@ public:
 	{
 
 	}
+
 
 	Player draw()
 	{
@@ -72,8 +80,25 @@ public:
 
 	Player shoot()
 	{
+		for (size_t i = 0; i < projectile.size(); ++i)
+		{
+			projectile.at(i).move();
+			projectile.at(i).draw();
+			if (projectile.at(i).getY() <= 0)
+				projectile.erase(projectile.begin() + i);
+		}
+		
 		if (IsKeyDown(KEY_SPACE))
-			projectile.draw().move();
+		{
+			projectile.push_back({ m_x, m_y - m_height, 5, 150 });
+
+		}
+		
+		return *this;
+	}
+
+	Player pmove()
+	{
 		
 		return *this;
 	}
@@ -92,10 +117,10 @@ int main()
 	while (!WindowShouldClose())
 	{
 		player.move();
-
+		player.shoot();
 		BeginDrawing();
 		ClearBackground(BLACK);
-		player.draw().shoot();
+		player.draw();
 		
 		EndDrawing();
 	}
