@@ -77,6 +77,15 @@ public:
 
 	Player move()
 	{
+		if (m_x - m_width / 2 < 0)
+			m_x = m_width / 2;
+		if (m_x + m_width / 2 > GetScreenWidth())
+			m_x = GetScreenWidth() - m_width / 2;
+		if (m_y - m_height < 0)
+			m_y = m_height;
+		if (m_y > GetScreenHeight())
+			m_y = GetScreenHeight();
+
 		if (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT))
 		{
 			m_x -= m_speed * GetFrameTime();
@@ -117,11 +126,6 @@ public:
 		return *this;
 	}
 
-	Player pmove()
-	{
-		
-		return *this;
-	}
 };
 
 
@@ -134,7 +138,7 @@ int main()
 
 	Player player{ GetScreenWidth() / 2.0f, GetScreenHeight() * 1.0f - 50, 200, 80, 80 };
 
-	float shooting_delay = 1.0f;
+	float shooting_delay = 0.2f;
 	Timer shoot_timer{ 0 };
 	while (!WindowShouldClose())
 	{
