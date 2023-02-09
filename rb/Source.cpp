@@ -59,10 +59,7 @@ public:
 
 	/*void PlayerAttacked(Player &player)
 	{
-		if (CheckCollisionPointTriangle(getVec(), player.getPoint1(), player.getPoint2(), player.getPoint3()))
-		{
-			game_over = true;
-		}
+		
 	}
 
 	void EnemyAttacked()
@@ -78,11 +75,13 @@ private:
 	float m_x, m_y;
 	float m_speed;
 	float m_width, m_height;
+	float m_shooting_delay;
+	Timer m_shoot_timer;
 	std::vector<Projectile> projectile;
 
 public:
 	Player(float x, float y, float speed, float width, float height)
-		: m_x{ x }, m_y{ y }, m_speed{ speed }, m_width{width}, m_height{height}
+		: m_x{ x }, m_y{ y }, m_speed{ speed }, m_width{width}, m_height{height}, m_shooting_delay{0.4f}, m_shoot_timer{0}
 	{
 
 	}
@@ -135,7 +134,7 @@ public:
 		return *this;
 	}
 
-	Player shoot(float delay, Timer &timer)
+	Player shoot()
 	{
 		for (size_t i = 0; i < projectile.size(); ++i)
 		{
@@ -145,18 +144,24 @@ public:
 				projectile.erase(projectile.begin() + i);
 		}
 		
-		if (IsKeyDown(KEY_SPACE) && TimerDone(timer))
+		if (IsKeyDown(KEY_SPACE) && TimerDone(m_shoot_timer))
 		{
 			projectile.push_back({ m_x, m_y - m_height, 5, 150 });
-			StartTimer(&timer, delay);
+			StartTimer(&m_shoot_timer, m_shooting_delay);
 			
 		}
 
-		GetElapsed(timer);
+		GetElapsed(m_shoot_timer);
 		return *this;
 	}
 
-
+	/*void playerDeath()
+	{
+		if (CheckCollisionPointTriangle(getVec(), player.getPoint1(), player.getPoint2(), player.getPoint3()))
+		{
+			game_over = true;
+		}
+	}*/
 
 };
 
@@ -167,11 +172,13 @@ private:
 	float m_x, m_y;
 	float m_speed;
 	float m_width, m_height;
+	float m_shooting_delay;
+	Timer m_shoot_timer;
 	std::vector<Projectile> projectile;
 
 public:
 	Enemy(float x, float y, float speed, float width, float height)
-		: m_x{ x }, m_y{ y }, m_speed{ speed }, m_width{ width }, m_height{ height }
+		: m_x{ x }, m_y{ y }, m_speed{ speed }, m_width{ width }, m_height{ height }, m_shooting_delay{0.4f}, m_shoot_timer{0}
 	{
 
 	}
@@ -192,7 +199,7 @@ public:
 		return *this;
 	}
 
-	Enemy shoot(float delay, Timer& timer)
+	Enemy shoot()
 	{
 		for (size_t i = 0; i < projectile.size(); ++i)
 		{
@@ -202,14 +209,14 @@ public:
 				projectile.erase(projectile.begin() + i);
 		}
 
-		if (TimerDone(timer))
+		if (TimerDone(m_shoot_timer))
 		{
-			projectile.push_back({ m_x, m_y - m_height, 5, 150 });
-			StartTimer(&timer, delay);
+			projectile.push_back({ m_x, m_y, 5, -150 });
+			StartTimer(&m_shoot_timer, m_shooting_delay);
 
 		}
 
-		GetElapsed(timer);
+		GetElapsed(m_shoot_timer);
 		return *this;
 	}
 
@@ -225,14 +232,14 @@ int main()
 	Player player{ GetScreenWidth() / 2.0f, GetScreenHeight() * 1.0f - 50, 200, 80, 80 };
 	Enemy enemy{ GetScreenWidth() / 2.0f, 100, 200, 80, 80 } ;
 
-	float shooting_delay = 0.4f;
-	Timer shoot_timer{ 0 };
+	
 	while (!WindowShouldClose())
 	{
 		if (!game_over)
 		{
 			player.move();
-			player.shoot(shooting_delay, shoot_timer);
+			player.shoot();
+			enemy.shoot();
 		}
 		else
 			DrawText("Game Over", GetScreenWidth() / 2.0f, GetScreenHeight() / 2.0f, 30, YELLOW);
