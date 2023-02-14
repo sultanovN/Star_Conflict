@@ -2,7 +2,7 @@
 #include <vector>
 
 bool game_over = false;
-
+float direction = 1;
 typedef struct Timer {
 	double startTime;   // Start time (seconds)
 	double lifeTime;    // Lifetime (seconds)
@@ -25,7 +25,6 @@ double GetElapsed(Timer timer)
 }
 
 
-class Player;
 
 
 class Projectile
@@ -68,6 +67,7 @@ public:
 	}*/
 };
 
+class Enemies;
 
 class Player
 {
@@ -78,10 +78,11 @@ private:
 	float m_shooting_delay;
 	Timer m_shoot_timer;
 	std::vector<Projectile> projectile;
+	Color m_color;
 
 public:
-	Player(float x, float y, float speed, float width, float height)
-		: m_x{ x }, m_y{ y }, m_speed{ speed }, m_width{width}, m_height{height}, m_shooting_delay{0.4f}, m_shoot_timer{0}
+	Player(float x, float y, float speed, float width, float height, Color color = BLUE)
+		: m_x{ x }, m_y{ y }, m_speed{ speed }, m_width{width}, m_height{height}, m_shooting_delay{0.4f}, m_shoot_timer{0}, m_color{color}
 	{
 
 	}
@@ -94,6 +95,8 @@ public:
 	Vector2 getPoint1()const { return { m_x, m_y - m_height }; }
 	Vector2 getPoint2()const { return { m_x - m_width / 2, m_y }; }
 	Vector2 getPoint3()const { return { m_x + m_width / 2, m_y }; }
+
+	std::vector<Projectile> getProj() { return projectile; }
 
 	Player draw()
 	{
@@ -155,13 +158,7 @@ public:
 		return *this;
 	}
 
-	/*void playerDeath()
-	{
-		if (CheckCollisionPointTriangle(getVec(), player.getPoint1(), player.getPoint2(), player.getPoint3()))
-		{
-			game_over = true;
-		}
-	}*/
+	void playerDeath(Enemies& enemy);
 
 };
 
@@ -175,10 +172,11 @@ private:
 	float m_shooting_delay;
 	Timer m_shoot_timer;
 	std::vector<Projectile> projectile;
+	Color m_color;
 
 public:
 	Enemy(float x, float y, float speed, float width, float height)
-		: m_x{ x }, m_y{ y }, m_speed{ speed }, m_width{ width }, m_height{ height }, m_shooting_delay{0.4f}, m_shoot_timer{0}
+		: m_x{ x }, m_y{ y }, m_speed{ speed }, m_width{ width }, m_height{ height }, m_shooting_delay{0.4f}, m_shoot_timer{0}, m_color{RED}
 	{
 
 	}
@@ -188,6 +186,8 @@ public:
 
 	}
 
+	std::vector<Projectile> getProj() { return projectile; }
+
 	Vector2 getPoint1()const { return { m_x - m_width / 2, m_y - m_height };}
 	Vector2 getPoint2()const { return  { m_x, m_y };}
 	Vector2 getPoint3()const { return { m_x + m_width / 2, m_y - m_height }; }
@@ -195,7 +195,18 @@ public:
 	Enemy draw()
 	{
 		DrawTriangle(getPoint1(), getPoint2(),
-			getPoint3(), RED);
+			getPoint3(), m_color);
+		return *this;
+	}
+
+	Enemy move()
+	{
+		if (m_x < m_width / 2)
+			direction = 1;
+		
+		if (m_x > GetScreenWidth() - m_width / 2)
+			direction = -1;
+		m_x += m_speed * GetFrameTime() * direction;
 		return *this;
 	}
 
@@ -211,7 +222,7 @@ public:
 
 		if (TimerDone(m_shoot_timer))
 		{
-			projectile.push_back({ m_x, m_y, 5, -150 });
+			projectile.push_back({ m_x, m_y, 5, -90 });
 			StartTimer(&m_shoot_timer, m_shooting_delay);
 
 		}
@@ -220,9 +231,86 @@ public:
 		return *this;
 	}
 
+	void death(Player &player)
+	{
+		for (size_t i = 0; i < player.getProj().size(); ++i)
+		{
+			if (CheckCollisionPointTriangle(player.getProj().at(i).getVec(), getPoint1(), getPoint2(), getPoint3()))
+			{
+				m_color = PURPLE ;
+			}
+		}
+		
+	}
 
 };
 
+class Enemies
+{
+private:
+	std::vector<Enemy> m_enemy{ {GetScreenWidth() / 2.0f, 100, 200, 80, 80} };
+
+public:
+
+	std::vector<Enemy> getVector()const { return m_enemy; }
+
+	Enemies draw()
+	{
+		for (size_t i = 0; i < m_enemy.size(); ++i)
+		{
+			m_enemy.at(i).draw();
+		}
+		return *this;
+	}
+
+	Enemies move()
+	{
+		for (size_t i = 0; i < m_enemy.size(); ++i)
+		{
+			m_enemy.at(i).move();
+		}
+		return *this;
+	}
+
+	Enemies shoot()
+	{
+		for (size_t i = 0; i < m_enemy.size(); ++i)
+		{
+			m_enemy.at(i).shoot();
+		}
+		return *this;
+	}
+
+	Enemies death(Player& player)
+	{
+		for (size_t i = m_enemy.size(); i > 0; --i)
+		{
+			for (size_t j = 0; j < player.getProj().size(); ++j)
+			{
+				if (CheckCollisionPointTriangle(player.getProj().at(j).getVec(), m_enemy.at(i-1).getPoint1(), m_enemy.at(i-1).getPoint2(), m_enemy.at(i-1).getPoint3()))
+				{
+					m_enemy.erase(m_enemy.begin() + (i - 1));
+					break;
+				}
+			}
+		}
+		return *this;
+	}
+};
+
+void Player::playerDeath(Enemies& enemy)
+{
+	for (size_t i = 0; i < enemy.getVector().size(); ++i)
+	{
+		for (size_t i = 0; i < enemy.getVector().at(i).getProj().size(); ++i)
+		{
+			if (CheckCollisionPointTriangle(enemy.getVector().at(i).getProj().at(i).getVec(), getPoint1(), getPoint2(), getPoint3()))
+			{
+				m_color = PURPLE;
+			}
+		}
+	}
+}
 
 int main()
 {
@@ -230,7 +318,7 @@ int main()
 	InitWindow(GetScreenWidth(), GetScreenHeight(), "Star Conflict");
 
 	Player player{ GetScreenWidth() / 2.0f, GetScreenHeight() * 1.0f - 50, 200, 80, 80 };
-	Enemy enemy{ GetScreenWidth() / 2.0f, 100, 200, 80, 80 } ;
+	Enemies enemy/*{ GetScreenWidth() / 2.0f, 100, 200, 80, 80 }*/;
 
 	
 	while (!WindowShouldClose())
@@ -240,6 +328,9 @@ int main()
 			player.move();
 			player.shoot();
 			enemy.shoot();
+			enemy.move();
+			enemy.death(player);
+			/*player.playerDeath(enemy);*/
 		}
 		else
 			DrawText("Game Over", GetScreenWidth() / 2.0f, GetScreenHeight() / 2.0f, 30, YELLOW);
